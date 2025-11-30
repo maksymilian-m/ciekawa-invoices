@@ -10,7 +10,16 @@ from src.config import settings
 logger = logging.getLogger(__name__)
 
 class FirestoreAdapter(InvoiceRepository):
+    """Firestore implementation of InvoiceRepository."""
+
     def __init__(self, project_id: str | None = None, database: str | None = None):
+        """
+        Initializes the Firestore adapter.
+
+        Args:
+            project_id: GCP Project ID.
+            database: Firestore database name.
+        """
         self.project_id = project_id or settings.gcp_project_id
         self.database = database or settings.firestore_database
         
@@ -26,10 +35,17 @@ class FirestoreAdapter(InvoiceRepository):
                 self.client = None
 
     def _check_client(self):
+        """Checks if the Firestore client is initialized."""
         if not self.client:
             raise RuntimeError("Firestore client is not initialized.")
 
     def save_raw_invoice(self, invoice: RawInvoice):
+        """
+        Saves a raw invoice to Firestore.
+
+        Args:
+            invoice: The raw invoice to save.
+        """
         self._check_client()
         doc_ref = self.client.collection("raw_invoices").document(invoice.id)
         
@@ -42,7 +58,13 @@ class FirestoreAdapter(InvoiceRepository):
         doc_ref.set(data)
         logger.info(f"Saved raw invoice {invoice.id} to Firestore.")
 
-    def get_pending_raw_invoices(self) -> List[RawInvoice]:
+    def get_pending_raw_invoices(self) -> list[RawInvoice]:
+        """
+        Retrieves all raw invoices with PENDING status from Firestore.
+
+        Returns:
+            List of pending raw invoices.
+        """
         self._check_client()
         docs = self.client.collection("raw_invoices").where(
             filter=firestore.FieldFilter("status", "==", ProcessingStatus.PENDING.value)
@@ -68,6 +90,14 @@ class FirestoreAdapter(InvoiceRepository):
         return pending
 
     def update_raw_invoice_status(self, invoice_id: str, status: str, error: str | None = None):
+        """
+        Updates the status of a raw invoice in Firestore.
+
+        Args:
+            invoice_id: ID of the invoice to update.
+            status: New status.
+            error: Optional error message.
+        """
         self._check_client()
         doc_ref = self.client.collection("raw_invoices").document(invoice_id)
         
@@ -82,6 +112,12 @@ class FirestoreAdapter(InvoiceRepository):
         logger.info(f"Updated raw invoice {invoice_id} status to {status}.")
 
     def save_processed_invoice(self, invoice: ProcessedInvoice):
+        """
+        Saves a processed invoice to Firestore.
+
+        Args:
+            invoice: The processed invoice to save.
+        """
         self._check_client()
         doc_ref = self.client.collection("processed_invoices").document(invoice.id)
         
@@ -91,7 +127,13 @@ class FirestoreAdapter(InvoiceRepository):
         doc_ref.set(data)
         logger.info(f"Saved processed invoice {invoice.id} to Firestore.")
 
-    def get_unsynced_processed_invoices(self) -> List[ProcessedInvoice]:
+    def get_unsynced_processed_invoices(self) -> list[ProcessedInvoice]:
+        """
+        Retrieves all processed invoices that have not been synced from Firestore.
+
+        Returns:
+            List of unsynced processed invoices.
+        """
         self._check_client()
         docs = self.client.collection("processed_invoices").where(
             filter=firestore.FieldFilter("sync_status", "==", SyncStatus.NOT_SYNCED.value)
@@ -130,6 +172,14 @@ class FirestoreAdapter(InvoiceRepository):
         return unsynced
 
     def update_processed_invoice_sync_status(self, invoice_id: str, status: str, error: str | None = None):
+        """
+        Updates the sync status of a processed invoice in Firestore.
+
+        Args:
+            invoice_id: ID of the invoice to update.
+            status: New sync status.
+            error: Optional error message.
+        """
         self._check_client()
         doc_ref = self.client.collection("processed_invoices").document(invoice_id)
         

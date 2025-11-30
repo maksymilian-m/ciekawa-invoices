@@ -19,3 +19,11 @@ class NotificationService:
             logger.info("Summary email sent successfully.")
         except Exception as e:
             logger.error(f"Failed to send summary email: {e}")
+    
+    def send_summary(self, summary: dict):
+        """Send a custom summary dict."""
+        try:
+            self.notification_provider.send_summary(summary)
+            logger.info("Summary email sent successfully.")
+        except Exception as e:
+            logger.error(f"Failed to send summary email: {e}")
