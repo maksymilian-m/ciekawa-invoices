@@ -3,7 +3,7 @@ import logging
 import csv
 from pathlib import Path
 from datetime import datetime
-from src.infrastructure.vertex_ai_adapter import VertexAIAdapter
+from src.infrastructure.gemini_adapter import GeminiAdapter
 from src.config import settings
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 def process_sample_invoices():
     """Process all sample PDFs and generate CSV output."""
     
-    # Initialize the agent
-    agent = VertexAIAdapter()
+    # Initialize the LLM adapter
+    llm = GeminiAdapter()
     
     # Sample data directory
     sample_dir = Path("sample_data")
@@ -28,7 +28,7 @@ def process_sample_invoices():
     for pdf_file in pdf_files:
         try:
             logger.info(f"Processing {pdf_file.name}...")
-            extracted_data = agent.run_agent(str(pdf_file))
+            extracted_data = llm.extract_invoice_data(str(pdf_file))
             
             # Convert to CSV row format
             row = {

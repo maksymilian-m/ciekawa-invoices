@@ -29,8 +29,8 @@ def test_processing_service_extracts_and_saves(processing_service, mock_invoice_
     )
     mock_invoice_repo.get_pending_raw_invoices.return_value = [raw_invoice]
     
-    # Mock ADK response
-    mock_adk_agent.run_agent.return_value = {
+    # Mock LLM response
+    mock_adk_agent.extract_invoice_data.return_value = {
         "vendor_name": "Test Vendor",
         "total_amount": 100.0,
         "invoice_date": "2023-01-01",
@@ -41,6 +41,6 @@ def test_processing_service_extracts_and_saves(processing_service, mock_invoice_
     processing_service.run()
 
     # Assert
-    mock_adk_agent.run_agent.assert_called_once_with("p")
+    mock_adk_agent.extract_invoice_data.assert_called_once_with("p")
     mock_invoice_repo.save_processed_invoice.assert_called_once()
     mock_invoice_repo.update_raw_invoice_status.assert_called_with("inv_1", "PROCESSED")

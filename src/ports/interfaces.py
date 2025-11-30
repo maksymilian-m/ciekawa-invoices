@@ -35,9 +35,10 @@ class InvoiceRepository(ABC):
     def update_processed_invoice_sync_status(self, invoice_id: str, status: str, error: str | None = None):
         pass
 
-class AgentProvider(ABC):
+class LLMProvider(ABC):
     @abstractmethod
-    def run_agent(self, file_path: str) -> dict:
+    def extract_invoice_data(self, file_path: str) -> dict:
+        """Extract structured invoice data from PDF file."""
         pass
 
 class SheetsProvider(ABC):

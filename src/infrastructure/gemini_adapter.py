@@ -1,16 +1,18 @@
-"""Real Vertex AI Adapter using Google ADK and Gemini."""
+"""Gemini LLM Adapter using google-genai SDK with structured output."""
 import logging
 import base64
 from pathlib import Path
 from google import genai
 from google.genai import types
-from src.ports.interfaces import AgentProvider
+from src.ports.interfaces import LLMProvider
 from src.domain.invoice_schema import InvoiceExtraction
 from src.config import settings
 
 logger = logging.getLogger(__name__)
 
-class VertexAIAdapter(AgentProvider):
+class GeminiAdapter(LLMProvider):
+    """Gemini LLM adapter for invoice extraction with structured output."""
+    
     def __init__(self, api_key: str | None = None, model: str | None = None):
         self.api_key = api_key or settings.gemini_api_key
         self.model_name = model or settings.gemini_model
@@ -20,9 +22,9 @@ class VertexAIAdapter(AgentProvider):
             self.client = None
         else:
             self.client = genai.Client(api_key=self.api_key)
-            logger.info(f"Initialized VertexAIAdapter with model: {self.model_name}")
+            logger.info(f"Initialized GeminiAdapter with model: {self.model_name}")
 
-    def run_agent(self, file_path: str) -> dict:
+    def extract_invoice_data(self, file_path: str) -> dict:
         """Extract invoice data from PDF using Gemini with structured output."""
         if not self.client:
             logger.warning("Running in mock mode - returning dummy data")
@@ -45,21 +47,9 @@ class VertexAIAdapter(AgentProvider):
             with open(pdf_path, "rb") as f:
                 pdf_data = base64.standard_b64encode(f.read()).decode("utf-8")
             
-            # Create system instruction
-            system_instruction = """You are a helpful office assistant for a local Warsaw bistro. 
-Your role is to extract key information from invoice PDFs in Polish.
-
-Extract the following information:
-- Invoice Date (Data wystawienia)
-- Category: Classify into one of: JEDZENIE, NAPOJE, ALKOHOL, ADMINISTRACYJNE, BANK, BAR, CHEMIA, CIASTA, DOSTAWY, GAZ, IMPREZY, INNE RACHUNKI, KAWA, KONCESJA, LODY, LÓD, PODATEK, PRĄD, REKLAMA, REMONT, ŚMIECIE, UBEZPIECZENIE, WODA, WYPOSAŻENIE
-- Vendor name (Sprzedawca)
-- Net amount (Kwota netto)
-- Gross amount (Kwota brutto)
-- Invoice number (Numer faktury)
-- Payment date (Termin płatności)
-
-Use Polish date format and comma as decimal separator in your understanding, but output dates in YYYY-MM-DD format and numbers as floats."""
-
+            # Load system instruction from file
+            system_instruction = settings.load_instruction()
+            
             # Generate content with structured output
             response = self.client.models.generate_content(
                 model=self.model_name,

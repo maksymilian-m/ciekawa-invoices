@@ -12,7 +12,7 @@ from src.services.notification_service import NotificationService
 
 from src.infrastructure.gmail_adapter import GmailAdapter
 from src.infrastructure.firestore_adapter import FirestoreAdapter
-from src.infrastructure.vertex_ai_adapter import VertexAIAdapter
+from src.infrastructure.gemini_adapter import GeminiAdapter
 from src.infrastructure.sheets_adapter import GoogleSheetsAdapter
 from src.infrastructure.email_notification_adapter import EmailNotificationAdapter
 
@@ -26,13 +26,13 @@ def main():
     # In the future, these will take config from env vars
     email_provider = GmailAdapter()
     invoice_repo = FirestoreAdapter()
-    agent_provider = VertexAIAdapter()
+    llm_provider = GeminiAdapter()
     sheets_provider = GoogleSheetsAdapter()
     notification_provider = EmailNotificationAdapter()
 
     # Initialize Services
     retrieval_service = RetrievalService(email_provider, invoice_repo)
-    processing_service = ProcessingService(invoice_repo, agent_provider)
+    processing_service = ProcessingService(invoice_repo, llm_provider)
     sheets_service = SheetsService(invoice_repo, sheets_provider)
     notification_service = NotificationService(notification_provider)
 

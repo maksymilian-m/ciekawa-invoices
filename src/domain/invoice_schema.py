@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from datetime import date
+from src.config import settings
 
 class InvoiceExtraction(BaseModel):
     """Structured output model for invoice data extraction."""
@@ -8,7 +9,7 @@ class InvoiceExtraction(BaseModel):
         description="The date when the invoice was issued (Data wystawienia)"
     )
     category: str = Field(
-        description="Invoice category classification. Must be one of: JEDZENIE, NAPOJE, ALKOHOL, ADMINISTRACYJNE, BANK, BAR, CHEMIA, CIASTA, DOSTAWY, GAZ, IMPREZY, INNE RACHUNKI, KAWA, KONCESJA, LODY, LÓD, PODATEK, PRĄD, REKLAMA, REMONT, ŚMIECIE, UBEZPIECZENIE, WODA, WYPOSAŻENIE"
+        description=f"Invoice category classification. Must be one of: {', '.join(settings.load_categories())}"
     )
     vendor: str = Field(
         description="The name of the invoice issuer/vendor (Sprzedawca)"

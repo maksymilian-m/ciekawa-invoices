@@ -2,14 +2,14 @@ import logging
 import uuid
 from datetime import datetime, timezone
 from src.domain.entities import ProcessedInvoice, InvoiceData, SyncStatus, ProcessingStatus, InvoiceItem
-from src.ports.interfaces import InvoiceRepository, AgentProvider
+from src.ports.interfaces import InvoiceRepository, LLMProvider
 
 logger = logging.getLogger(__name__)
 
 class ProcessingService:
-    def __init__(self, invoice_repo: InvoiceRepository, agent_provider: AgentProvider):
+    def __init__(self, invoice_repo: InvoiceRepository, llm_provider: LLMProvider):
         self.invoice_repo = invoice_repo
-        self.agent_provider = agent_provider
+        self.llm_provider = llm_provider
 
     def run(self):
         logger.info("Starting Processing Service...")
@@ -20,8 +20,8 @@ class ProcessingService:
             try:
                 logger.info(f"Processing invoice {raw_invoice.id}...")
                 
-                # Extract data using Agent
-                extracted_dict = self.agent_provider.run_agent(raw_invoice.email_data.attachment_path)
+                # Extract data using LLM
+                extracted_dict = self.llm_provider.extract_invoice_data(raw_invoice.email_data.attachment_path)
                 
                 # Map dict to InvoiceData dataclass
                 # Note: This assumes the LLM returns a dict matching our schema. 
