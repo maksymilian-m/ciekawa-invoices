@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
 from datetime import datetime
 from src.services.processing_service import ProcessingService
 from src.domain.entities import RawInvoice, ProcessingStatus, Email

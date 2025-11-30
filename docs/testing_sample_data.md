@@ -15,7 +15,7 @@
 
 3. **Check the output**:
    - Generated file: `sample_data/output_processed_invoices.csv`
-   - Expected file: `sample_data/processed_invoices.csv.txt`
+   - Expected file: `sample_data/processed_invoices.csv`
 
 ## What It Does
 

@@ -1,24 +1,159 @@
 import logging
+import os.path
+import base64
+from typing import List
+from datetime import datetime
+from pathlib import Path
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+
 from src.ports.interfaces import EmailProvider
 from src.domain.entities import Email
-from datetime import datetime
+from src.config import settings
 
 logger = logging.getLogger(__name__)
 
-class GmailAdapter(EmailProvider):
-    def __init__(self, credentials_path: str | None = None):
-        self.credentials_path = credentials_path
-        # TODO: Initialize Gmail API client here
-        logger.info("Initialized GmailAdapter (Mock Mode)")
+# If modifying these scopes, delete the file token.json.
+SCOPES = ['https://www.googleapis.com/auth/gmail.modify']
 
-    def fetch_unread_emails_with_attachments(self) -> list[Email]:
-        # TODO: Implement actual Gmail API call
-        # 1. List messages with 'is:unread has:attachment'
-        # 2. Get message details
-        # 3. Download attachment
-        logger.info("Fetching emails from Gmail (Mock)...")
-        return []
+class GmailAdapter(EmailProvider):
+    def __init__(self, credentials_path: str | None = None, token_path: str = "token.json", download_dir: str = "data/raw_pdfs"):
+        self.credentials_path = credentials_path or settings.gmail_credentials_path
+        self.token_path = token_path
+        self.download_dir = Path(download_dir)
+        self.download_dir.mkdir(parents=True, exist_ok=True)
+        self.service = self._authenticate()
+        logger.info("Initialized GmailAdapter")
+
+    def _authenticate(self):
+        creds = None
+        # The file token.json stores the user's access and refresh tokens, and is
+        # created automatically when the authorization flow completes for the first
+        # time.
+        if os.path.exists(self.token_path):
+            creds = Credentials.from_authorized_user_file(self.token_path, SCOPES)
+        
+        # If there are no (valid) credentials available, let the user log in.
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                try:
+                    creds.refresh(Request())
+                except Exception as e:
+                    logger.warning(f"Failed to refresh token: {e}. Re-authenticating...")
+                    creds = None
+            
+            if not creds:
+                if not self.credentials_path or not os.path.exists(self.credentials_path):
+                    logger.warning("No credentials found. GmailAdapter will not work.")
+                    return None
+                
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    self.credentials_path, SCOPES
+                )
+                creds = flow.run_local_server(port=0)
+            
+            # Save the credentials for the next run
+            with open(self.token_path, "w") as token:
+                token.write(creds.to_json())
+        
+        return build("gmail", "v1", credentials=creds)
+
+    def fetch_unread_emails_with_attachments(self) -> List[Email]:
+        if not self.service:
+            logger.warning("Gmail service not initialized. Returning empty list.")
+            return []
+
+        try:
+            # Call the Gmail API
+            results = self.service.users().messages().list(userId='me', q='is:unread has:attachment').execute()
+            messages = results.get('messages', [])
+            
+            emails = []
+            if not messages:
+                logger.info("No unread messages found.")
+                return []
+
+            logger.info(f"Found {len(messages)} unread messages with attachments.")
+            
+            for msg in messages:
+                email_data = self._process_message(msg['id'])
+                if email_data:
+                    emails.append(email_data)
+            
+            return emails
+
+        except HttpError as error:
+            logger.error(f"An error occurred: {error}")
+            return []
+
+    def _process_message(self, msg_id: str) -> Email | None:
+        try:
+            message = self.service.users().messages().get(userId='me', id=msg_id).execute()
+            payload = message['payload']
+            headers = payload.get('headers', [])
+            
+            subject = next((h['value'] for h in headers if h['name'] == 'Subject'), "No Subject")
+            sender = next((h['value'] for h in headers if h['name'] == 'From'), "Unknown Sender")
+            date_str = next((h['value'] for h in headers if h['name'] == 'Date'), "")
+            
+            # Parse date (simplified, might need robust parsing)
+            try:
+                email_date = datetime.strptime(date_str.split(',')[1].strip().split(' +')[0].split(' -')[0], "%d %b %Y %H:%M:%S")
+            except Exception:
+                email_date = datetime.now() # Fallback
+
+            parts = payload.get('parts', [])
+            
+            # Find PDF attachment
+            for part in parts:
+                if part.get('filename') and part['filename'].lower().endswith('.pdf'):
+                    filename = part['filename']
+                    attachment_id = part['body'].get('attachmentId')
+                    
+                    if attachment_id:
+                        attachment = self.service.users().messages().attachments().get(
+                            userId='me', messageId=msg_id, id=attachment_id
+                        ).execute()
+                        
+                        data = base64.urlsafe_b64decode(attachment['data'].encode('UTF-8'))
+                        
+                        # Save to file
+                        safe_filename = f"{msg_id}_{filename}"
+                        file_path = self.download_dir / safe_filename
+                        with open(file_path, "wb") as f:
+                            f.write(data)
+                        
+                        logger.info(f"Downloaded attachment: {safe_filename}")
+                        
+                        return Email(
+                            id=msg_id,
+                            sender=sender,
+                            subject=subject,
+                            date=email_date,
+                            attachment_path=str(file_path.absolute()),
+                            content=message.get('snippet', "")
+                        )
+            
+            logger.info(f"No PDF attachment found in message {msg_id}")
+            return None
+
+        except Exception as e:
+            logger.error(f"Failed to process message {msg_id}: {e}")
+            return None
 
     def mark_as_processed(self, email_id: str):
-        # TODO: Remove 'UNREAD' label
-        logger.info(f"Marked email {email_id} as processed (Mock).")
+        if not self.service:
+            return
+            
+        try:
+            self.service.users().messages().modify(
+                userId='me',
+                id=email_id,
+                body={'removeLabelIds': ['UNREAD']}
+            ).execute()
+            logger.info(f"Marked email {email_id} as processed (removed UNREAD label).")
+        except HttpError as error:
+            logger.error(f"An error occurred marking email as processed: {error}")

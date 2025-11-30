@@ -1,6 +1,7 @@
 """Gemini LLM Adapter using google-genai SDK with structured output."""
 import logging
 import base64
+import json
 from pathlib import Path
 from google import genai
 from google.genai import types
@@ -73,7 +74,6 @@ class GeminiAdapter(LLMProvider):
             logger.debug(f"Raw response: {result}")
             
             # The response should already be a JSON string matching our schema
-            import json
             return json.loads(result)
             
         except Exception as e:
