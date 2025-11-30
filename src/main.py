@@ -10,17 +10,11 @@ from src.services.processing_service import ProcessingService
 from src.services.sheets_service import SheetsService
 from src.services.notification_service import NotificationService
 
-# Placeholder imports for infrastructure adapters (to be implemented)
-# from src.infrastructure.gmail_adapter import GmailAdapter
-# from src.infrastructure.firestore_adapter import FirestoreAdapter
-# from src.infrastructure.gemini_adapter import GeminiAdapter
-# from src.infrastructure.sheets_adapter import GoogleSheetsAdapter
-# from src.infrastructure.email_notification_adapter import EmailNotificationAdapter
-
-# Mock adapters for now to allow running the structure
-class MockAdapter:
-    def __getattr__(self, name):
-        return lambda *args, **kwargs: []
+from src.infrastructure.gmail_adapter import GmailAdapter
+from src.infrastructure.firestore_adapter import FirestoreAdapter
+from src.infrastructure.vertex_ai_adapter import VertexAIAdapter
+from src.infrastructure.sheets_adapter import GoogleSheetsAdapter
+from src.infrastructure.email_notification_adapter import EmailNotificationAdapter
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -28,22 +22,17 @@ logger = logging.getLogger(__name__)
 def main():
     logger.info("Starting Ciekawa Invoices Agentic Workflow")
 
-    # Initialize Adapters (TODO: Replace with real implementations)
-    # email_provider = GmailAdapter()
-    # invoice_repo = FirestoreAdapter()
-    # llm_provider = GeminiAdapter()
-    # sheets_provider = GoogleSheetsAdapter()
-    # notification_provider = EmailNotificationAdapter()
-    
-    email_provider = MockAdapter()
-    invoice_repo = MockAdapter()
-    llm_provider = MockAdapter()
-    sheets_provider = MockAdapter()
-    notification_provider = MockAdapter()
+    # Initialize Adapters
+    # In the future, these will take config from env vars
+    email_provider = GmailAdapter()
+    invoice_repo = FirestoreAdapter()
+    agent_provider = VertexAIAdapter()
+    sheets_provider = GoogleSheetsAdapter()
+    notification_provider = EmailNotificationAdapter()
 
     # Initialize Services
     retrieval_service = RetrievalService(email_provider, invoice_repo)
-    processing_service = ProcessingService(invoice_repo, llm_provider)
+    processing_service = ProcessingService(invoice_repo, agent_provider)
     sheets_service = SheetsService(invoice_repo, sheets_provider)
     notification_service = NotificationService(notification_provider)
 
