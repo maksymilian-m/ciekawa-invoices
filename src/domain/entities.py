@@ -30,13 +30,15 @@ class InvoiceItem:
 
 @dataclass
 class InvoiceData:
-    vendor_name: str
-    invoice_number: str
     invoice_date: datetime
-    due_date: datetime | None
-    total_amount: float
-    currency: str
-    items: list[InvoiceItem]
+    category: str
+    vendor_name: str
+    net_amount: float
+    gross_amount: float
+    invoice_number: str
+    due_date: datetime
+    items: list[InvoiceItem] | None = None # Optional now, as we focus on header data
+    currency: str = "PLN" # Default to PLN as per sample data context
     tax_amount: float | None = 0.0
 
 @dataclass

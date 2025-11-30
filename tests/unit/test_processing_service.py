@@ -31,10 +31,13 @@ def test_processing_service_extracts_and_saves(processing_service, mock_invoice_
     
     # Mock LLM response
     mock_adk_agent.extract_invoice_data.return_value = {
-        "vendor_name": "Test Vendor",
-        "total_amount": 100.0,
         "invoice_date": "2023-01-01",
-        "items": []
+        "category": "JEDZENIE",
+        "vendor": "Test Vendor",
+        "net_amount": 80.0,
+        "gross_amount": 100.0,
+        "invoice_number": "INV/001",
+        "payment_date": "2023-01-14"
     }
 
     # Act

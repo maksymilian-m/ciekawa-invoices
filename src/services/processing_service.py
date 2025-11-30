@@ -25,8 +25,17 @@ class ProcessingService:
                 
                 # Map dict to InvoiceData dataclass
                 # Note: This assumes the LLM returns a dict matching our schema. 
-                # In a real app, we'd add validation here (e.g. Pydantic).
-                invoice_data = self._map_to_invoice_data(extracted_dict)
+                # In a real app, we should validate this more strictly.
+                invoice_data = InvoiceData(
+                    invoice_date=datetime.strptime(extracted_dict['invoice_date'], '%Y-%m-%d'),
+                    category=extracted_dict['category'],
+                    vendor_name=extracted_dict['vendor'],
+                    net_amount=float(extracted_dict['net_amount']),
+                    gross_amount=float(extracted_dict['gross_amount']),
+                    invoice_number=extracted_dict['invoice_number'],
+                    due_date=datetime.strptime(extracted_dict['payment_date'], '%Y-%m-%d'),
+                    items=[] # We are not extracting items yet
+                )
 
                 processed_invoice = ProcessedInvoice(
                     id=str(uuid.uuid4()),

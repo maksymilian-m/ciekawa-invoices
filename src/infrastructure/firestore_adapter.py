@@ -103,16 +103,18 @@ class FirestoreAdapter(InvoiceRepository):
             inv_data = data['extracted_data']
             
             # Reconstruct nested objects
-            items = [InvoiceItem(**i) for i in inv_data['items']]
+            items = [InvoiceItem(**i) for i in inv_data.get('items', [])] if inv_data.get('items') else None
             invoice_data = InvoiceData(
-                vendor_name=inv_data['vendor_name'],
-                invoice_number=inv_data['invoice_number'],
                 invoice_date=inv_data['invoice_date'],
+                category=inv_data['category'],
+                vendor_name=inv_data['vendor_name'],
+                net_amount=inv_data['net_amount'],
+                gross_amount=inv_data['gross_amount'],
+                invoice_number=inv_data['invoice_number'],
                 due_date=inv_data['due_date'],
-                total_amount=inv_data['total_amount'],
-                currency=inv_data['currency'],
                 items=items,
-                tax_amount=inv_data.get('tax_amount')
+                currency=inv_data.get('currency', 'PLN'),
+                tax_amount=inv_data.get('tax_amount', 0.0)
             )
             
             processed = ProcessedInvoice(

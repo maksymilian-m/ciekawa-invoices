@@ -1,7 +1,6 @@
 import logging
 import os.path
 import base64
-from typing import List
 from datetime import datetime
 from pathlib import Path
 from google.auth.transport.requests import Request
@@ -61,7 +60,7 @@ class GmailAdapter(EmailProvider):
         
         return build("gmail", "v1", credentials=creds)
 
-    def fetch_unread_emails_with_attachments(self) -> List[Email]:
+    def fetch_unread_emails_with_attachments(self) -> list[Email]:
         if not self.service:
             logger.warning("Gmail service not initialized. Returning empty list.")
             return []

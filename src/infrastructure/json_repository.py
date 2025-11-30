@@ -102,29 +102,6 @@ class JsonInvoiceRepository(InvoiceRepository):
         self._save_json(self.processed_invoices_file, data)
         logger.info(f"Saved processed invoice {invoice.id} to JSON DB.")
 
-    def get_unsynced_processed_invoices(self) -> List[ProcessedInvoice]:
-        data = self._load_json(self.processed_invoices_file)
-        unsynced = []
-        for item in data:
-            if item['sync_status'] == SyncStatus.NOT_SYNCED.value:
-                # Reconstruct
-                inv_data = item['extracted_data']
-                items = [InvoiceItem(**i) for i in inv_data['items']]
-                invoice_data = InvoiceData(
-                    vendor_name=inv_data['vendor_name'],
-                    invoice_number=inv_data['invoice_number'],
-                    invoice_date=datetime.fromisoformat(inv_data['invoice_date']),
-                    due_date=datetime.fromisoformat(inv_data['due_date']) if inv_data['due_date'] else None,
-                    total_amount=inv_data['total_amount'],
-                    currency=inv_data['currency'],
-                    items=items,
-                    tax_amount=inv_data.get('tax_amount')
-                )
-                
-                processed = ProcessedInvoice(
-                    id=item['id'],
-                    raw_invoice_id=item['raw_invoice_id'],
-                    extracted_data=invoice_data,
                     sync_status=SyncStatus(item['sync_status']),
                     created_at=datetime.fromisoformat(item['created_at']),
                     updated_at=datetime.fromisoformat(item['updated_at']),
