@@ -181,7 +181,7 @@ wheels = [
 [[package]]
 name = "ciekawa-invoices"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "google-adk" },
     { name = "google-auth" },
@@ -189,6 +189,10 @@ dependencies = [
     { name = "google-cloud-storage" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
+]
+
+[package.dev-dependencies]
+dev = [
     { name = "pytest" },
     { name = "pytest-mock" },
 ]
@@ -201,6 +205,10 @@ requires-dist = [
     { name = "google-cloud-storage", specifier = ">=3.6.0" },
     { name = "pydantic", specifier = ">=2.12.5" },
     { name = "pydantic-settings", specifier = ">=2.12.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [
     { name = "pytest", specifier = ">=9.0.1" },
     { name = "pytest-mock", specifier = ">=3.15.1" },
 ]

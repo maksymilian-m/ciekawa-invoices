@@ -22,8 +22,9 @@ This guide details how to deploy the **Ciekawa Invoices** agent to **Google Clou
 
 ## Cost Estimates (1000 Invoices/Month)
 -   **Compute (Cloud Run)**: ~$0.00 (within Free Tier).
--   **Model (Gemini 1.5 Flash)**: ~$0.50 (very cheap, high performance). *Note: Gemini 1.5 Flash is the latest cost-optimized model.*
--   **Storage (GCS)**: ~$0.04/month for 2GB of PDFs. *Recommendation: Keep files for audit; cost is negligible.*
+-   **Model (Gemini 2.5 Flash Lite)**: ~$0.10 (Extremely cost-effective). *Note: This is the recommended model for high-volume, low-cost extraction.*
+-   **Storage (GCS)**: ~$0.04/month for 2GB of PDFs.
+    -   *Tip*: Configure a **Lifecycle Rule** on the GCS bucket to automatically delete files after 30 days to keep costs zero.
 -   **Database (Firestore)**: ~$0.00 (within Free Tier).
 
 ## Deployment Steps
