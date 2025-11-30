@@ -44,6 +44,7 @@ def test_processing_service_extracts_and_saves(processing_service, mock_invoice_
     processing_service.run()
 
     # Assert
+    # Since we added retry logic, we verify the underlying call
     mock_adk_agent.extract_invoice_data.assert_called_once_with("p")
     mock_invoice_repo.save_processed_invoice.assert_called_once()
     mock_invoice_repo.update_raw_invoice_status.assert_called_with("inv_1", "PROCESSED")

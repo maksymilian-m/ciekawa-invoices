@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     # Google Sheets
     google_sheets_id: str = ""
     
+    # Notification
+    notification_email: str = "maksymilian.m@gmail.com"
+    
     # Paths
     categories_file: str = "config/categories.yaml"
     instruction_file: str = "prompts/invoice_extraction_instruction.md"
