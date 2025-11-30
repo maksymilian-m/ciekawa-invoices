@@ -19,6 +19,8 @@ def mock_llm_provider():
 
 @pytest.fixture
 def processing_service(mock_invoice_repo, mock_llm_provider):
+    # Set default return value for invoice_number_exists
+    mock_invoice_repo.invoice_number_exists.return_value = False
     return ProcessingService(mock_invoice_repo, mock_llm_provider)
 
 
@@ -154,7 +156,7 @@ def test_duplicate_invoice_detection(processing_service, mock_invoice_repo, mock
     mock_invoice_repo.get_pending_raw_invoices.return_value = [raw_invoice]
     
     # Mock that an invoice with this number already exists
-    mock_invoice_repo.invoice_number_exists = Mock(return_value=True)
+    mock_invoice_repo.invoice_number_exists.return_value = True
     
     mock_llm_provider.extract_invoice_data.return_value = {
         "invoice_date": "2023-01-01",
@@ -169,10 +171,14 @@ def test_duplicate_invoice_detection(processing_service, mock_invoice_repo, mock
     # Act
     processing_service.run()
     
-    # Assert
-    # Should not save if duplicate detection is implemented
-    # For now, this test will fail - we need to implement the feature
-    # mock_invoice_repo.save_processed_invoice.assert_not_called()
+    # Assert - should not save if duplicate
+    mock_invoice_repo.invoice_number_exists.assert_called_once_with("INV/001")
+    mock_invoice_repo.save_processed_invoice.assert_not_called()
+    # Should be marked as failed with duplicate message
+    failed_calls = [c for c in mock_invoice_repo.update_raw_invoice_status.call_args_list 
+                    if c[0][1] == "FAILED"]
+    assert len(failed_calls) >= 1
+    assert "Duplicate" in failed_calls[0][0][2]
 
 
 def test_processing_service_extracts_and_saves(processing_service, mock_invoice_repo, mock_llm_provider):

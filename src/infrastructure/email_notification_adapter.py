@@ -17,12 +17,20 @@ logger = logging.getLogger(__name__)
 SCOPES = ['https://www.googleapis.com/auth/gmail.send']
 
 class EmailNotificationAdapter(NotificationProvider):
-    def __init__(self, credentials_path: str | None = None, token_path: str = "token.json", recipient_email: str | None = None):
+    def __init__(self, credentials_path: str | None = None, token_path: str = "token.json", recipient_email: str | list[str] | None = None):
         self.credentials_path = credentials_path or settings.gmail_credentials_path
         self.token_path = token_path
-        self.recipient_email = recipient_email or settings.notification_email
+        
+        # Support both single email and list of emails
+        if recipient_email is None:
+            self.recipient_emails = settings.get_notification_emails()
+        elif isinstance(recipient_email, str):
+            self.recipient_emails = [recipient_email]
+        else:
+            self.recipient_emails = recipient_email
+            
         self.service = self._authenticate()
-        logger.info("Initialized EmailNotificationAdapter")
+        logger.info(f"Initialized EmailNotificationAdapter for {len(self.recipient_emails)} recipient(s)")
 
     def _authenticate(self):
         creds = None
@@ -59,15 +67,18 @@ class EmailNotificationAdapter(NotificationProvider):
 
         try:
             message_text = self._format_summary(summary)
-            message = MIMEText(message_text)
-            message['to'] = self.recipient_email
-            message['subject'] = f"Ciekawa Invoices Summary - {summary.get('date', 'Today')}"
             
-            raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
-            body = {'raw': raw_message}
-            
-            self.service.users().messages().send(userId='me', body=body).execute()
-            logger.info(f"Sent summary email to {self.recipient_email}")
+            # Send to all recipients
+            for recipient in self.recipient_emails:
+                message = MIMEText(message_text)
+                message['to'] = recipient
+                message['subject'] = f"Ciekawa Invoices Summary - {summary.get('date', 'Today')}"
+                
+                raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
+                body = {'raw': raw_message}
+                
+                self.service.users().messages().send(userId='me', body=body).execute()
+                logger.info(f"Sent summary email to {recipient}")
 
         except HttpError as error:
             logger.error(f"An error occurred sending email: {error}")

@@ -54,6 +54,7 @@ def test_end_to_end_happy_path(
     mock_email_provider.fetch_unread_emails_with_attachments.return_value = [email]
     mock_invoice_repo.get_pending_raw_invoices.return_value = []  # Will be populated by retrieval
     mock_invoice_repo.get_unsynced_processed_invoices.return_value = []
+    mock_invoice_repo.invoice_number_exists.return_value = False  # No duplicates
     
     mock_llm_provider.extract_invoice_data.return_value = {
         "invoice_date": "2023-01-01",

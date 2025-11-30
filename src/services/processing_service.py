@@ -32,6 +32,16 @@ class ProcessingService:
             
             # Validate and map data
             invoice_data = self._map_and_validate(extracted_dict)
+            
+            # Check for duplicate invoice number
+            if self.invoice_repo.invoice_number_exists(invoice_data.invoice_number):
+                logger.warning(f"Duplicate invoice detected: {invoice_data.invoice_number} for raw invoice {raw_invoice.id}")
+                self.invoice_repo.update_raw_invoice_status(
+                    raw_invoice.id, 
+                    ProcessingStatus.FAILED.value, 
+                    f"Duplicate invoice number: {invoice_data.invoice_number}"
+                )
+                return  # Skip processing this duplicate
 
             processed_invoice = ProcessedInvoice(
                 id=str(uuid.uuid4()),

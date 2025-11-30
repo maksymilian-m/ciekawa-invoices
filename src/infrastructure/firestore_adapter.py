@@ -1,5 +1,4 @@
 import logging
-from typing import List
 from datetime import datetime
 from dataclasses import asdict
 from google.cloud import firestore
@@ -192,3 +191,12 @@ class FirestoreAdapter(InvoiceRepository):
             
         doc_ref.update(update_data)
         logger.info(f"Updated processed invoice {invoice_id} sync status to {status}.")
+    
+    def invoice_number_exists(self, invoice_number: str) -> bool:
+        """Check if an invoice with the given invoice number already exists."""
+        self._check_client()
+        docs = self.client.collection("processed_invoices").where(
+            filter=firestore.FieldFilter("extracted_data.invoice_number", "==", invoice_number)
+        ).limit(1).stream()
+        
+        return any(True for _ in docs)

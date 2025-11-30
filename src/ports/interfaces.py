@@ -34,6 +34,11 @@ class InvoiceRepository(ABC):
     @abstractmethod
     def update_processed_invoice_sync_status(self, invoice_id: str, status: str, error: str | None = None):
         pass
+    
+    @abstractmethod
+    def invoice_number_exists(self, invoice_number: str) -> bool:
+        """Check if an invoice with the given invoice number already exists."""
+        pass
 
 class LLMProvider(ABC):
     @abstractmethod

@@ -121,3 +121,11 @@ class JsonInvoiceRepository(InvoiceRepository):
                 break
         self._save_json(self.processed_invoices_file, data)
         logger.info(f"Updated processed invoice {invoice_id} sync status to {status}.")
+    
+    def invoice_number_exists(self, invoice_number: str) -> bool:
+        """Check if an invoice with the given invoice number already exists."""
+        data = self._load_json(self.processed_invoices_file)
+        return any(
+            item['extracted_data']['invoice_number'] == invoice_number 
+            for item in data
+        )

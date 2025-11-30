@@ -23,8 +23,12 @@ class Settings(BaseSettings):
     # Google Sheets
     google_sheets_id: str = ""
     
-    # Notification
+    # Notification (comma-separated list of emails)
     notification_email: str = "maksymilian.m@gmail.com"
+    
+    def get_notification_emails(self) -> list[str]:
+        """Parse notification emails from comma-separated string."""
+        return [email.strip() for email in self.notification_email.split(',') if email.strip()]
     
     # Paths
     categories_file: str = "config/categories.yaml"

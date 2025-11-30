@@ -14,7 +14,8 @@ def mock_adk_agent():
 
 @pytest.fixture
 def processing_service(mock_invoice_repo, mock_adk_agent):
-    # Note: We'll need to adjust ProcessingService to accept the agent or a factory
+    # Set default return value for invoice_number_exists
+    mock_invoice_repo.invoice_number_exists.return_value = False
     return ProcessingService(mock_invoice_repo, mock_adk_agent)
 
 def test_processing_service_extracts_and_saves(processing_service, mock_invoice_repo, mock_adk_agent):
