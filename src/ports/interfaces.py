@@ -1,10 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
 from src.domain.entities import RawInvoice, ProcessedInvoice, Email
 
 class EmailProvider(ABC):
     @abstractmethod
-    def fetch_unread_emails_with_attachments(self) -> List[Email]:
+    def fetch_unread_emails_with_attachments(self) -> list[Email]:
         pass
 
     @abstractmethod
@@ -17,11 +16,11 @@ class InvoiceRepository(ABC):
         pass
 
     @abstractmethod
-    def get_pending_raw_invoices(self) -> List[RawInvoice]:
+    def get_pending_raw_invoices(self) -> list[RawInvoice]:
         pass
 
     @abstractmethod
-    def update_raw_invoice_status(self, invoice_id: str, status: str, error: Optional[str] = None):
+    def update_raw_invoice_status(self, invoice_id: str, status: str, error: str | None = None):
         pass
 
     @abstractmethod
@@ -29,16 +28,16 @@ class InvoiceRepository(ABC):
         pass
     
     @abstractmethod
-    def get_unsynced_processed_invoices(self) -> List[ProcessedInvoice]:
+    def get_unsynced_processed_invoices(self) -> list[ProcessedInvoice]:
         pass
 
     @abstractmethod
-    def update_processed_invoice_sync_status(self, invoice_id: str, status: str, error: Optional[str] = None):
+    def update_processed_invoice_sync_status(self, invoice_id: str, status: str, error: str | None = None):
         pass
 
-class LLMProvider(ABC):
+class AgentProvider(ABC):
     @abstractmethod
-    def extract_invoice_data(self, file_path: str) -> dict:
+    def run_agent(self, file_path: str) -> dict:
         pass
 
 class SheetsProvider(ABC):

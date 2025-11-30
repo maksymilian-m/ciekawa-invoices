@@ -4,4 +4,13 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "google-adk>=1.19.0",
+    "google-auth>=2.43.0",
+    "google-cloud-firestore>=2.21.0",
+    "google-cloud-storage>=3.6.0",
+    "pydantic>=2.12.5",
+    "pydantic-settings>=2.12.0",
+    "pytest>=9.0.1",
+    "pytest-mock>=3.15.1",
+]
