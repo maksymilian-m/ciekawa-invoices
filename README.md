@@ -33,7 +33,7 @@ src/
 
 **Design Principles:**
 - 🎯 **SOLID**: Single responsibility, dependency inversion
-- 🧪 **TDD**: 17 comprehensive unit tests (100% passing)
+- 🧪 **TDD**: Comprehensive unit tests
 - 🐍 **Modern Python**: Type hints, dataclasses, Python 3.13+
 - 🔌 **Dependency Injection**: Easy to test and swap implementations
 
@@ -43,7 +43,7 @@ See [docs/architecture.md](docs/architecture.md) for detailed architecture docum
 
 ### Core Workflow
 - **Gmail Integration**: OAuth2 authentication, automatic email retrieval
-- **PDF Processing**: Gemini Flash 2.0 for intelligent data extraction
+- **PDF Processing**: Gemini Flash 2.5 Lite for intelligent data extraction
 - **Structured Data**: Extracts vendor, date, amounts, invoice number, category
 - **Firestore Storage**: Scalable cloud database for invoice records
 - **Google Sheets Export**: Automated sync to accounting spreadsheet
@@ -105,11 +105,11 @@ Edit `.env` file:
 ```bash
 # GCP Settings
 GCP_PROJECT_ID=your-project-id
-GCP_LOCATION=us-central1
+GCP_LOCATION=your-location
 
 # Gemini API
 GEMINI_API_KEY=your-api-key
-GEMINI_MODEL=gemini-2.0-flash-exp
+GEMINI_MODEL=your-model
 
 # Gmail
 GMAIL_CREDENTIALS_PATH=credentials.json
@@ -156,16 +156,13 @@ uv run pytest -v
 
 # Run specific test suite
 uv run pytest tests/unit/test_processing_service.py -v
-
-# Run with coverage
-uv run pytest --cov=src
 ```
 
-**Test Coverage**: 17 tests covering:
-- Gmail adapter edge cases (5 tests)
-- Processing service with retry logic (7 tests)
-- Retrieval service (2 tests)
-- Workflow integration (3 tests)
+**Test Coverage**: Tests covering:
+- Gmail adapter edge cases
+- Processing service with retry logic
+- Retrieval service
+- Workflow integration
 
 ## 📊 Data Flow
 
@@ -277,18 +274,6 @@ See [docs/deployment.md](docs/deployment.md) for detailed deployment instruction
 4. Add business logic in `src/services/`
 5. Write tests in `tests/unit/`
 6. Update documentation
-
-## 📝 License
-
-[Your License Here]
-
-## 🤝 Contributing
-
-[Contribution guidelines if applicable]
-
-## 📧 Support
-
-For issues or questions, please contact [your-email@example.com]
 
 ---
 

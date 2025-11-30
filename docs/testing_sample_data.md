@@ -21,7 +21,7 @@
 
 The test script:
 1. Reads all PDF files from `sample_data/`
-2. Uses Gemini 2.0 Flash with structured output (Pydantic schema)
+2. Uses the selected LLM (default: Gemini 2.5 Flash Lite) with structured output (Pydantic schema)
 3. Extracts invoice data matching the expected CSV format
 4. Generates `output_processed_invoices.csv`
 
