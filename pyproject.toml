@@ -9,6 +9,7 @@ dependencies = [
     "google-auth>=2.43.0",
     "google-cloud-firestore>=2.21.0",
     "google-cloud-storage>=3.6.0",
+    "google-genai>=1.52.0",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.12.0",
 ]
