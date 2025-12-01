@@ -1,3 +1,4 @@
+import json
 import logging
 import os.path
 import base64
@@ -9,7 +10,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-from src.ports.interfaces import EmailProvider
+from src.ports.interfaces import EmailProvider, FileStorage
+from src.infrastructure.storage import LocalFileStorage
 from src.domain.entities import Email
 from src.config import settings
 
@@ -19,31 +21,43 @@ logger = logging.getLogger(__name__)
 SCOPES = ['https://www.googleapis.com/auth/gmail.modify']
 
 class GmailAdapter(EmailProvider):
-    def __init__(self, credentials_path: str | None = None, token_path: str = "token.json", download_dir: str = "data/raw_pdfs"):
+    def __init__(self, credentials_path: str | None = None, token_path: str = "token.json", download_dir: str = "data/raw_pdfs", storage: FileStorage | None = None):
         self.credentials_path = credentials_path or settings.gmail_credentials_path
         self.token_path = token_path
-        self.download_dir = Path(download_dir)
-        self.download_dir.mkdir(parents=True, exist_ok=True)
+        self.storage = storage or LocalFileStorage(base_dir=download_dir)
         self.service = self._authenticate()
         logger.info("Initialized GmailAdapter")
 
     def _authenticate(self):
         creds = None
-        # The file token.json stores the user's access and refresh tokens, and is
-        # created automatically when the authorization flow completes for the first
-        # time.
-        if os.path.exists(self.token_path):
+        
+        # 1. Try loading from Environment Variable (Cloud/Production)
+        if settings.gmail_token_json:
+            try:
+                info = json.loads(settings.gmail_token_json)
+                creds = Credentials.from_authorized_user_info(info, SCOPES)
+                logger.info("Loaded Gmail credentials from environment variable.")
+            except Exception as e:
+                logger.error(f"Failed to load credentials from environment variable: {e}")
+
+        # 2. Try loading from local file (Development)
+        if not creds and os.path.exists(self.token_path):
             creds = Credentials.from_authorized_user_file(self.token_path, SCOPES)
         
-        # If there are no (valid) credentials available, let the user log in.
+        # 3. Refresh or Login
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 try:
                     creds.refresh(Request())
+                    # If we are using a file, update it
+                    if os.path.exists(self.token_path):
+                        with open(self.token_path, "w") as token:
+                            token.write(creds.to_json())
                 except Exception as e:
                     logger.warning(f"Failed to refresh token: {e}. Re-authenticating...")
                     creds = None
             
+            # 4. Interactive Login (Local only)
             if not creds:
                 if not self.credentials_path or not os.path.exists(self.credentials_path):
                     logger.warning("No credentials found. GmailAdapter will not work.")
@@ -53,10 +67,10 @@ class GmailAdapter(EmailProvider):
                     self.credentials_path, SCOPES
                 )
                 creds = flow.run_local_server(port=0)
-            
-            # Save the credentials for the next run
-            with open(self.token_path, "w") as token:
-                token.write(creds.to_json())
+                
+                # Save the credentials for the next run
+                with open(self.token_path, "w") as token:
+                    token.write(creds.to_json())
         
         return build("gmail", "v1", credentials=creds)
 
@@ -119,11 +133,9 @@ class GmailAdapter(EmailProvider):
                         
                         data = base64.urlsafe_b64decode(attachment['data'].encode('UTF-8'))
                         
-                        # Save to file
+                        # Save to storage
                         safe_filename = f"{msg_id}_{filename}"
-                        file_path = self.download_dir / safe_filename
-                        with open(file_path, "wb") as f:
-                            f.write(data)
+                        file_path_str = self.storage.save_file(safe_filename, data)
                         
                         logger.info(f"Downloaded attachment: {safe_filename}")
                         
@@ -132,7 +144,7 @@ class GmailAdapter(EmailProvider):
                             sender=sender,
                             subject=subject,
                             date=email_date,
-                            attachment_path=str(file_path.absolute()),
+                            attachment_path=file_path_str,
                             content=message.get('snippet', "")
                         )
             

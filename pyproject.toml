@@ -1,7 +1,7 @@
 [project]
 name = "ciekawa-invoices"
 version = "0.1.0"
-description = "Tool to automatically process invoices"
+description = "Automatic Invoice Processing Tool"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [

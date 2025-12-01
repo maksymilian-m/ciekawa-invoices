@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     # GCP Settings
     gcp_project_id: str = ""
     gcp_location: str = "us-central1"
+    gcs_bucket_name: str = "" # GCS Bucket for storing PDFs
     
     # Gemini API
     gemini_api_key: str = ""
@@ -16,6 +17,7 @@ class Settings(BaseSettings):
     
     # Gmail Settings
     gmail_credentials_path: str = ""
+    gmail_token_json: str = "" # Content of token.json for cloud deployment
     
     # Firestore
     firestore_database: str = "(default)"

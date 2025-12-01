@@ -15,6 +15,8 @@ from src.infrastructure.firestore_adapter import FirestoreAdapter
 from src.infrastructure.gemini_adapter import GeminiAdapter
 from src.infrastructure.sheets_adapter import GoogleSheetsAdapter
 from src.infrastructure.email_notification_adapter import EmailNotificationAdapter
+from src.infrastructure.storage import LocalFileStorage, GCSFileStorage
+from src.config import settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -23,8 +25,16 @@ def main():
     logger.info("Starting Ciekawa Invoices Agentic Workflow")
 
     # Initialize Adapters
-    # In the future, these will take config from env vars
-    email_provider = GmailAdapter()
+    
+    # Storage Selection
+    if settings.gcs_bucket_name:
+        logger.info(f"Using GCS Storage with bucket: {settings.gcs_bucket_name}")
+        storage = GCSFileStorage(bucket_name=settings.gcs_bucket_name)
+    else:
+        logger.info("Using Local File Storage")
+        storage = LocalFileStorage()
+
+    email_provider = GmailAdapter(storage=storage)
     invoice_repo = FirestoreAdapter()
     llm_provider = GeminiAdapter()
     sheets_provider = GoogleSheetsAdapter()

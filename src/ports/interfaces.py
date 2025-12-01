@@ -55,3 +55,9 @@ class NotificationProvider(ABC):
     @abstractmethod
     def send_summary(self, summary: dict):
         pass
+
+class FileStorage(ABC):
+    @abstractmethod
+    def save_file(self, filename: str, content: bytes) -> str:
+        """Save file and return the path/URI."""
+        pass
