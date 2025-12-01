@@ -2,7 +2,7 @@ import json
 import logging
 from pathlib import Path
 from typing import List
-from datetime import datetime
+from datetime import datetime, date
 from dataclasses import asdict
 
 from src.ports.interfaces import InvoiceRepository
@@ -30,7 +30,7 @@ class JsonInvoiceRepository(InvoiceRepository):
     def _save_json(self, path: Path, data: list):
         # Helper to serialize datetime and enums
         def default(o):
-            if isinstance(o, (datetime, datetime.date)):
+            if isinstance(o, (datetime, date)):
                 return o.isoformat()
             if isinstance(o, (ProcessingStatus, SyncStatus)):
                 return o.value
@@ -102,6 +102,27 @@ class JsonInvoiceRepository(InvoiceRepository):
         self._save_json(self.processed_invoices_file, data)
         logger.info(f"Saved processed invoice {invoice.id} to JSON DB.")
 
+    def get_unsynced_processed_invoices(self) -> List[ProcessedInvoice]:
+        data = self._load_json(self.processed_invoices_file)
+        unsynced = []
+        for item in data:
+            if item['sync_status'] == SyncStatus.NOT_SYNCED.value:
+                extracted_dict = item['extracted_data'].copy()
+                
+                if extracted_dict.get('items'):
+                    extracted_dict['items'] = [InvoiceItem(**i) for i in extracted_dict['items']]
+                
+                if isinstance(extracted_dict['invoice_date'], str):
+                    extracted_dict['invoice_date'] = datetime.fromisoformat(extracted_dict['invoice_date'])
+                if isinstance(extracted_dict['due_date'], str):
+                    extracted_dict['due_date'] = datetime.fromisoformat(extracted_dict['due_date'])
+                
+                invoice_data = InvoiceData(**extracted_dict)
+
+                processed = ProcessedInvoice(
+                    id=item['id'],
+                    raw_invoice_id=item['raw_invoice_id'],
+                    extracted_data=invoice_data,
                     sync_status=SyncStatus(item['sync_status']),
                     created_at=datetime.fromisoformat(item['created_at']),
                     updated_at=datetime.fromisoformat(item['updated_at']),
