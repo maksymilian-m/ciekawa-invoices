@@ -1,3 +1,4 @@
+import json
 import logging
 import os.path
 from google.auth.transport.requests import Request
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 class GoogleSheetsAdapter(SheetsProvider):
-    def __init__(self, spreadsheet_id: str | None = None, credentials_path: str | None = None, token_path: str = "token.json"):
+    def __init__(self, spreadsheet_id: str | None = None, credentials_path: str | None = None, token_path: str = "sheets_token.json"):
         self.spreadsheet_id = spreadsheet_id or settings.google_sheets_id
         self.credentials_path = credentials_path or settings.gmail_credentials_path # Reusing same credentials file
         self.token_path = token_path
@@ -25,17 +26,34 @@ class GoogleSheetsAdapter(SheetsProvider):
 
     def _authenticate(self):
         creds = None
-        if os.path.exists(self.token_path):
+        
+        # 1. Try loading from Environment Variable (Cloud/Production)
+        if settings.google_sheets_token_json:
+            try:
+                info = json.loads(settings.google_sheets_token_json)
+                creds = Credentials.from_authorized_user_info(info, SCOPES)
+                logger.info("Loaded Sheets credentials from environment variable.")
+            except Exception as e:
+                logger.error(f"Failed to load credentials from environment variable: {e}")
+
+        # 2. Try loading from local file (Development)
+        if not creds and os.path.exists(self.token_path):
             creds = Credentials.from_authorized_user_file(self.token_path, SCOPES)
         
+        # 3. Refresh or Login
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 try:
                     creds.refresh(Request())
+                    # If we are using a file, update it
+                    if os.path.exists(self.token_path):
+                        with open(self.token_path, "w") as token:
+                            token.write(creds.to_json())
                 except Exception as e:
                     logger.warning(f"Failed to refresh token: {e}. Re-authenticating...")
                     creds = None
             
+            # 4. Interactive Login (Local only)
             if not creds:
                 if not self.credentials_path or not os.path.exists(self.credentials_path):
                     logger.warning("No credentials found. GoogleSheetsAdapter will not work.")
@@ -45,9 +63,10 @@ class GoogleSheetsAdapter(SheetsProvider):
                     self.credentials_path, SCOPES
                 )
                 creds = flow.run_local_server(port=0)
-            
-            with open(self.token_path, "w") as token:
-                token.write(creds.to_json())
+                
+                # Save the credentials for the next run
+                with open(self.token_path, "w") as token:
+                    token.write(creds.to_json())
         
         return build("sheets", "v4", credentials=creds)
 

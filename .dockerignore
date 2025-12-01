@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local data
+data/
+token.json
+sheets_token.json
+
+# Environment
+.env
+
+# Git
+.git/
+.gitignore
+
+# Tests
+tests/
+test_*.py
+.pytest_cache/
+
+# Docs (optional, uncomment if you don't want docs in image)
+docs/
+
+# CI/CD
+.github/

@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     
     # Google Sheets
     google_sheets_id: str = ""
+    google_sheets_token_json: str = "" # Content of token.json for cloud deployment
     
     # Notification (comma-separated list of emails)
     notification_email: str = "maksymilian.m@gmail.com"
