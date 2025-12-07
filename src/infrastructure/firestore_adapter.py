@@ -57,16 +57,23 @@ class FirestoreAdapter(InvoiceRepository):
         doc_ref.set(data)
         logger.info(f"Saved raw invoice {invoice.id} to Firestore.")
 
-    def get_pending_raw_invoices(self) -> list[RawInvoice]:
+    def get_pending_raw_invoices(self, statuses: list[ProcessingStatus] = None) -> list[RawInvoice]:
         """
-        Retrieves all raw invoices with PENDING status from Firestore.
+        Retrieves all raw invoices with specified statuses (default: PENDING).
 
         Returns:
             List of pending raw invoices.
         """
         self._check_client()
+        
+        if statuses is None:
+            statuses = [ProcessingStatus.PENDING]
+        
+        # Firestore 'in' query allows up to 10 values
+        status_values = [s.value for s in statuses]
+        
         docs = self.client.collection("raw_invoices").where(
-            filter=firestore.FieldFilter("status", "==", ProcessingStatus.PENDING.value)
+            filter=firestore.FieldFilter("status", "in", status_values)
         ).stream()
         
         pending = []

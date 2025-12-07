@@ -6,6 +6,7 @@ class ProcessingStatus(Enum):
     PENDING = "PENDING"
     PROCESSED = "PROCESSED"
     FAILED = "FAILED"
+    RETRY = "RETRY"
 
 class SyncStatus(Enum):
     NOT_SYNCED = "NOT_SYNCED"

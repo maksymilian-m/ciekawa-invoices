@@ -43,8 +43,17 @@ def test_sheets():
     # Test Append
     try:
         logger.info(f"Attempting to append invoice {processed_invoice.extracted_data.invoice_number}...")
+        
+        # --- VERIFICATION LOGIC FOR DEBUGGING ---
+        from src.config import settings
+        logger.info(f"Target Columns: {settings.sheets_column_mapping}")
+        
+        # Simulate what the adapter does to verifying mapping locally
+        # (This is a bit redundant but good for immediate feedback)
+        # Note: We are just logging here, the real work is done inside adapter.append_invoice
+        
         adapter.append_invoice(processed_invoice)
-        logger.info("Append successful.")
+        logger.info("Append successful (API call made).")
     except Exception as e:
         logger.error(f"Append failed: {e}")
 

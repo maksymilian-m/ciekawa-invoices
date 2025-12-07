@@ -66,14 +66,9 @@ class EmailNotificationAdapter(NotificationProvider):
             return
 
         try:
-            message_text = self._format_summary(summary)
-            
             # Send to all recipients
             for recipient in self.recipient_emails:
-                message = MIMEText(message_text)
-                message['to'] = recipient
-                message['subject'] = f"Ciekawa Invoices Summary - {summary.get('date', 'Today')}"
-                
+                message = self._create_message(recipient, summary)
                 raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
                 body = {'raw': raw_message}
                 
@@ -82,17 +77,57 @@ class EmailNotificationAdapter(NotificationProvider):
 
         except HttpError as error:
             logger.error(f"An error occurred sending email: {error}")
-    
-    def _format_summary(self, summary: dict) -> str:
-        lines = [f"Invoice Processing Summary for {summary.get('date', 'Today')}", ""]
-        lines.append(f"Total Processed: {summary.get('total_processed', 0)}")
-        lines.append(f"Successful: {summary.get('successful', 0)}")
-        lines.append(f"Failed: {summary.get('failed', 0)}")
-        lines.append("")
+            
+    def _create_message(self, recipient: str, summary: dict):
+        from email.mime.multipart import MIMEMultipart
+        from datetime import datetime
         
-        if summary.get('failures'):
-            lines.append("Failures:")
-            for failure in summary['failures']:
-                lines.append(f"- {failure}")
+        message = MIMEMultipart()
+        message['to'] = recipient
+        message['subject'] = f"Faktury - Podsumowanie z {datetime.now().strftime('%d.%m.%Y')}"
         
-        return "\n".join(lines)
+        retrieved = summary.get('retrieved', 0)
+        processed = summary.get('processed', 0)
+        failed = summary.get('failed', 0)
+        synced = summary.get('synced', 0)
+        retried = summary.get('retried', 0)
+        
+        body_html = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif;">
+            <h2>Podsumowanie przetwarzania faktur</h2>
+            <p>Data: {datetime.now().strftime('%d.%m.%Y %H:%M')}</p>
+            
+            <table style="border-collapse: collapse; margin: 20px 0;">
+                <tr style="background-color: #f0f0f0;">
+                    <td style="padding: 10px; border: 1px solid #ddd;"><strong>Nowe faktury pobrane z emaila:</strong></td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">{retrieved}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd;"><strong>Przetworzone pomyślnie:</strong></td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">{processed}</td>
+                </tr>
+                <tr style="background-color: #e8f5e9;">
+                    <td style="padding: 10px; border: 1px solid #ddd;"><strong>Dodane do arkusza:</strong></td>
+                    <td style="padding: 10px; border: 1px solid #ddd;"><strong>{synced}</strong></td>
+                </tr>
+                <tr style="background-color: #fff3cd;">
+                    <td style="padding: 10px; border: 1px solid #ddd;"><strong>Oczekujące (limit API):</strong></td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">{retried}</td>
+                </tr>
+                <tr style="background-color: #f8d7da;">
+                    <td style="padding: 10px; border: 1px solid #ddd;"><strong>Błędy:</strong></td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">{failed}</td>
+                </tr>
+            </table>
+            
+            <p><a href="https://docs.google.com/spreadsheets/d/{settings.google_sheets_id}" style="color: #1a73e8; text-decoration: none;">➜ Otwórz arkusz Google Sheets</a></p>
+            
+            {f'<p style="color: #856404;"><em>Uwaga: {retried} faktur oczekuje na ponowne przetworzenie z powodu limitów API. Zostaną przetworzone przy następnym uruchomieniu.</em></p>' if retried > 0 else ''}
+            {f'<p style="color: #721c24;"><em>Uwaga: {failed} faktur nie zostało przetworzonych. Sprawdź logi.</em></p>' if failed > 0 else ''}
+        </body>
+        </html>
+        """
+        
+        message.attach(MIMEText(body_html, 'html'))
+        return message

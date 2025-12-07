@@ -20,14 +20,33 @@ class Settings(BaseSettings):
     gmail_token_json: str = "" # Content of token.json for cloud deployment
     
     # Firestore
-    firestore_database: str = "(default)"
+    firestore_database: str = "ciekawa-invoices-db"
     
     # Google Sheets
     google_sheets_id: str = ""
-    google_sheets_token_json: str = "" # Content of token.json for cloud deployment
+    google_sheets_token_json: str = ""
+    sheets_name: str = "Wydatki"
     
     # Notification (comma-separated list of emails)
-    notification_email: str = "maksymilian.m@gmail.com"
+    notification_email: str = "maksymilianmaj@gmail.com"
+    
+    sheets_column_mapping: list[str] = [
+        "Pusta kolumna",
+        "Data wstawienia",
+        "PŁATNOŚĆ ZA",
+        "FIRMA / KONTRAHENT",
+        "NETTO",
+        "KWOTA BRUTTO",
+        "KWOTA BRUTTO NA FAKTURZE",
+        "PRYWATNE",
+        "NR FV",
+        "FORMA PŁATNOŚCI",
+        "ZAPŁACONE",
+        "TERMIN PŁATNOŚCI",
+        "DATA ZAPŁACENIE",
+        "UWAGI",
+        "NETO BAR"
+    ]
     
     def get_notification_emails(self) -> list[str]:
         """Parse notification emails from comma-separated string."""

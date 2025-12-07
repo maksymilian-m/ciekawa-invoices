@@ -11,11 +11,12 @@ class RetrievalService:
         self.email_provider = email_provider
         self.invoice_repo = invoice_repo
 
-    def run(self):
+    def run(self) -> dict:
         logger.info("Starting Retrieval Service...")
         emails = self.email_provider.fetch_unread_emails_with_attachments()
         logger.info(f"Found {len(emails)} emails with attachments.")
 
+        success_count = 0
         for email in emails:
             try:
                 # Create RawInvoice entity
@@ -35,8 +36,11 @@ class RetrievalService:
                 self.email_provider.mark_as_processed(email.id)
                 
                 logger.info(f"Successfully ingested email {email.id}")
+                success_count += 1
             except Exception as e:
                 logger.error(f"Failed to process email {email.id}: {e}")
                 # Note: We might want to mark it as failed in DB if we saved it, 
                 # but if saving failed, we just log it. 
                 # If marking as processed failed, we might re-process it next time, which is safer.
+        
+        return {'total': len(emails), 'success': success_count}

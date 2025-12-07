@@ -58,4 +58,5 @@ def generate_token():
     print("   GOOGLE_SHEETS_TOKEN_JSON='{same value}'")
 
 if __name__ == "__main__":
+    print("Starting OAuth token generation...")
     generate_token()

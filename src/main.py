@@ -48,20 +48,34 @@ def main():
 
     # 1. Retrieval Phase
     logger.info("--- Phase 1: Retrieval ---")
-    retrieval_service.run()
+    retrieval_stats = retrieval_service.run()
 
     # 2. Processing Phase
     logger.info("--- Phase 2: Processing ---")
-    processing_service.run()
+    processing_stats = processing_service.run()
 
     # 3. Export Phase
     logger.info("--- Phase 3: Export to Sheets ---")
-    sheets_service.run()
+    sheets_stats = sheets_service.run()
 
     # 4. Notification Phase
-    # Note: In a real scenario, we'd track counts from the services to pass here
     logger.info("--- Phase 4: Notification ---")
-    notification_service.send_workflow_summary(0, 0, 0, 0)
+    
+    retrieved_count = retrieval_stats.get('total', 0)
+    processed_count = processing_stats.get('success', 0)
+    processing_failed = processing_stats.get('failed', 0)
+    sheets_failed = sheets_stats.get('failed', 0)
+    total_failed = processing_failed + sheets_failed
+    synced_count = sheets_stats.get('success', 0)
+    retried_count = processing_stats.get('retried', 0)
+    
+    notification_service.send_workflow_summary(
+        retrieved_count=retrieved_count,
+        processed_count=processed_count,
+        failed_count=total_failed, 
+        synced_count=synced_count,
+        retried_count=retried_count
+    )
 
     logger.info("Workflow completed successfully.")
 

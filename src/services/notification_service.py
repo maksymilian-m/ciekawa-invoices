@@ -7,16 +7,17 @@ class NotificationService:
     def __init__(self, notification_provider: NotificationProvider):
         self.notification_provider = notification_provider
 
-    def send_workflow_summary(self, retrieved_count: int, processed_count: int, failed_count: int, synced_count: int):
+    def send_workflow_summary(self, retrieved_count: int, processed_count: int, failed_count: int, synced_count: int, retried_count: int = 0):
         summary = {
             "retrieved": retrieved_count,
             "processed": processed_count,
             "failed": failed_count,
-            "synced": synced_count
+            "synced": synced_count,
+            "retried": retried_count
         }
         try:
             self.notification_provider.send_summary(summary)
-            logger.info("Summary email sent successfully.")
+            logger.info(f"Summary email sent successfully. Stats: {summary}")
         except Exception as e:
             logger.error(f"Failed to send summary email: {e}")
     

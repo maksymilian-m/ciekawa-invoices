@@ -78,28 +78,38 @@ class GoogleSheetsAdapter(SheetsProvider):
         try:
             data = invoice.extracted_data
             
-            # Prepare row data matching the CSV format:
-            # "Data wstawienia","PŁATNOŚĆ ZA","FIRMA / KONTRAHENT","NETTO","KWOTA BRUTTO","NR FV","TERMIN PŁATNOŚCI"
-            row = [
-                data.invoice_date.strftime("%Y-%m-%d"),
-                data.category,
-                data.vendor_name,
-                f"{data.net_amount:.2f}".replace('.', ','), # Polish format
-                f"{data.gross_amount:.2f}".replace('.', ','), # Polish format
-                data.invoice_number,
-                data.due_date.strftime("%Y-%m-%d")
-            ]
-
-            body = {
-                'values': [row]
+            field_map = {
+                "Data wstawienia": lambda d: f"'{d.invoice_date.strftime('%d.%m.%Y')}",
+                "PŁATNOŚĆ ZA": lambda d: d.category,
+                "FIRMA / KONTRAHENT": lambda d: d.vendor_name,
+                "NETTO": lambda d: f"{d.net_amount:.2f}".replace('.', ','),
+                "KWOTA BRUTTO": lambda d: f"{d.gross_amount:.2f}".replace('.', ','),
+                "KWOTA BRUTTO NA FAKTURZE": lambda d: f"{d.gross_amount:.2f}".replace('.', ','),
+                "NR FV": lambda d: d.invoice_number,
+                "TERMIN PŁATNOŚCI": lambda d: f"'{d.due_date.strftime('%d.%m.%Y')}"
             }
+
+            row = []
+            for column_header in settings.sheets_column_mapping:
+                if column_header in field_map:
+                    row.append(field_map[column_header](data))
+                else:
+                    row.append("")
+
+            body = {'values': [row]}
 
             result = self.service.spreadsheets().values().append(
                 spreadsheetId=self.spreadsheet_id,
-                range="Arkusz1!A:G", # Assuming first sheet and columns A-G
+                range=settings.sheets_name, 
                 valueInputOption="USER_ENTERED",
+                insertDataOption="INSERT_ROWS",
                 body=body
             ).execute()
+            
+            updates = result.get('updates', {})
+            updated_range = updates.get('updatedRange', 'unknown')
+            updated_cells = updates.get('updatedCells', 0)
+            logger.info(f"Appended invoice {invoice.id} to Sheets. Range: {updated_range}, Cells: {updated_cells}")
 
             logger.info(f"Appended invoice {invoice.id} to Sheets. {result.get('updates').get('updatedCells')} cells updated.")
 

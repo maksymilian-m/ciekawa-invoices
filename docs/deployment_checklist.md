@@ -11,14 +11,14 @@ This checklist ensures you've prepared everything locally before deploying to Go
 
 ### ✅ Firestore
 - [x] Test script created: `test_firestore_connection.py`
-- [ ] Run test with local emulator OR authenticated cloud project
-- [ ] Verify read/write operations work
+- [x] Run test with local emulator OR authenticated cloud project
+- [x] Verify read/write operations work
 
 ### ✅ Google Sheets
 - [x] Test script created: `test_sheets_connection.py`
-- [ ] Create a test spreadsheet and get its ID
-- [ ] Set `GOOGLE_SHEETS_ID` in `.env`
-- [ ] Run test and verify row is appended
+- [x] Create a test spreadsheet and get its ID
+- [x] Set `GOOGLE_SHEETS_ID` in `.env`
+- [x] Run test and verify row is appended
 
 ### ✅ LLM Processing
 - [x] Run `test_sample_workflow.py` to verify Gemini extraction works
@@ -26,22 +26,22 @@ This checklist ensures you've prepared everything locally before deploying to Go
 ## 2. GCP Setup
 
 ### Project Configuration
-- [ ] Create a GCP project (or select existing)
-- [ ] Enable required APIs:
+- [x] Create a GCP project (or select existing)
+- [x] Enable required APIs:
   - Cloud Run API
   - Firestore API
   - Cloud Storage API
   - Secret Manager API (recommended)
-- [ ] Set up billing
+- [x] Set up billing
 
 ### Firestore Database
-- [ ] Create Firestore database in Native mode
-- [ ] Note the database name (default is `(default)`)
+- [x] Create Firestore database in Native mode
+- [x] Note the database name (`ciekawa-invoices-db`)
 
 ### Cloud Storage Bucket
-- [ ] Create a bucket for PDF storage (e.g., `ciekawa-invoices-pdfs`)
-- [ ] Set region (recommend same as Cloud Run)
-- [ ] Set lifecycle rules (optional, e.g., delete after 90 days)
+- [x] Create a bucket for PDF storage (e.g., `ciekawa-invoices-pdfs`)
+- [x] Set region (recommend same as Cloud Run)
+- [x] Set lifecycle rules (optional, e.g., delete after 90 days)
 
 ### Service Account
 - [ ] Create a service account for the application
@@ -54,17 +54,17 @@ This checklist ensures you've prepared everything locally before deploying to Go
 
 ### OAuth Token (Gmail + Sheets)
 **Recommended: Generate ONE token for both services**
-- [ ] Run `uv run python generate_oauth_token.py`
-- [ ] This creates `token.json` with both Gmail and Sheets scopes
-- [ ] Copy content for both `GMAIL_TOKEN_JSON` and `GOOGLE_SHEETS_TOKEN_JSON` env vars (same value!)
+- [x] Run `uv run python generate_oauth_token.py`
+- [x] This creates `token.json` with both Gmail and Sheets scopes
+- [x] Copy content for both `GMAIL_TOKEN_JSON` and `GOOGLE_SHEETS_TOKEN_JSON` env vars (same value!)
 
 **Alternative: Separate tokens** (if you prefer)
 - [ ] Generate Gmail token separately
 - [ ] Generate Sheets token separately in `sheets_token.json`
 
 ### Gemini API Key
-- [ ] Get API key from Google AI Studio
-- [ ] Prepare for `GEMINI_API_KEY` env var
+- [x] Get API key from Google AI Studio
+- [x] Prepare for `GEMINI_API_KEY` env var
 
 ### Environment Variables to Set in Cloud Run
 ```bash
