@@ -14,31 +14,43 @@ class ProcessingService:
     def run(self) -> dict:
         """
         Processes pending and retry invoices.
-        Returns statistics: total, success, failed, retried counts.
+        Returns statistics: total, success, failed, retried counts, and errors list.
         """
         logger.info("Starting Processing Service...")
         
         pending_invoices = self.invoice_repo.get_pending_raw_invoices([ProcessingStatus.PENDING, ProcessingStatus.RETRY])
         logger.info(f"Found {len(pending_invoices)} pending/retry invoices.")
         
-        stats = {'total': len(pending_invoices), 'success': 0, 'failed': 0, 'retried': 0}
+        stats = {'total': len(pending_invoices), 'success': 0, 'failed': 0, 'retried': 0, 'errors': []}
 
         for raw_invoice in pending_invoices:
             try:
-                result_status = self._process_single_invoice(raw_invoice)
+                result_status, error_info = self._process_single_invoice(raw_invoice)
                 if result_status == ProcessingStatus.PROCESSED:
                     stats['success'] += 1
                 elif result_status == ProcessingStatus.RETRY:
                     stats['retried'] += 1
                 else:
                     stats['failed'] += 1
+                    if error_info:
+                        stats['errors'].append(error_info)
             except Exception:
                 stats['failed'] += 1
                 
         return stats
 
-    def _process_single_invoice(self, raw_invoice) -> ProcessingStatus:
+    def _process_single_invoice(self, raw_invoice) -> tuple[ProcessingStatus, dict | None]:
+        """
+        Process a single invoice.
+        
+        Returns:
+            Tuple of (ProcessingStatus, error_info dict or None).
+            Error info contains 'filename' and 'reason' keys.
+        """
         logger.info(f"Processing invoice {raw_invoice.id}...")
+        
+        # Extract filename from path for error reporting
+        filename = raw_invoice.email_data.attachment_path.replace('\\', '/').split('/')[-1]
         
         try:
             # Extract data using LLM with retry logic
@@ -49,13 +61,14 @@ class ProcessingService:
             
             # Check for duplicate invoice number
             if self.invoice_repo.invoice_number_exists(invoice_data.invoice_number):
+                error_reason = f"Duplicate invoice number: {invoice_data.invoice_number}"
                 logger.warning(f"Duplicate invoice detected: {invoice_data.invoice_number}")
                 self.invoice_repo.update_raw_invoice_status(
                     raw_invoice.id, 
                     ProcessingStatus.FAILED.value, 
-                    f"Duplicate invoice number: {invoice_data.invoice_number}"
+                    error_reason
                 )
-                return ProcessingStatus.FAILED
+                return ProcessingStatus.FAILED, {'filename': filename, 'reason': error_reason}
 
             processed_invoice = ProcessedInvoice(
                 id=str(uuid.uuid4()),
@@ -73,7 +86,7 @@ class ProcessingService:
             self.invoice_repo.update_raw_invoice_status(raw_invoice.id, ProcessingStatus.PROCESSED.value)
             
             logger.info(f"Successfully processed invoice {raw_invoice.id}")
-            return ProcessingStatus.PROCESSED
+            return ProcessingStatus.PROCESSED, None
 
         except Exception as e:
             logger.error(f"Failed to process invoice {raw_invoice.id}: {e}")
@@ -82,7 +95,7 @@ class ProcessingService:
             if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
                 logger.warning(f"Quota exceeded for invoice {raw_invoice.id}. Marking as RETRY.")
                 self.invoice_repo.update_raw_invoice_status(raw_invoice.id, ProcessingStatus.RETRY.value, str(e))
-                return ProcessingStatus.RETRY
+                return ProcessingStatus.RETRY, None
             
             self.invoice_repo.update_raw_invoice_status(raw_invoice.id, ProcessingStatus.FAILED.value, str(e))
             raise

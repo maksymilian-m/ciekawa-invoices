@@ -68,13 +68,15 @@ def main():
     total_failed = processing_failed + sheets_failed
     synced_count = sheets_stats.get('success', 0)
     retried_count = processing_stats.get('retried', 0)
+    errors = processing_stats.get('errors', [])
     
     notification_service.send_workflow_summary(
         retrieved_count=retrieved_count,
         processed_count=processed_count,
         failed_count=total_failed, 
         synced_count=synced_count,
-        retried_count=retried_count
+        retried_count=retried_count,
+        errors=errors
     )
 
     logger.info("Workflow completed successfully.")

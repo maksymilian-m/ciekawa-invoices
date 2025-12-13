@@ -91,6 +91,29 @@ class EmailNotificationAdapter(NotificationProvider):
         failed = summary.get('failed', 0)
         synced = summary.get('synced', 0)
         retried = summary.get('retried', 0)
+        errors = summary.get('errors', [])
+        
+        # Build error details section if there are errors
+        error_details_html = ""
+        if errors:
+            error_rows = ""
+            for err in errors:
+                error_rows += f"""
+                <tr>
+                    <td style="padding: 8px; border: 1px solid #ddd;">{err.get('filename', 'Unknown')}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">{err.get('reason', 'Unknown error')}</td>
+                </tr>"""
+            
+            error_details_html = f"""
+            <h3 style="color: #721c24; margin-top: 20px;">Szczegóły błędów:</h3>
+            <table style="border-collapse: collapse; width: 100%;">
+                <tr style="background-color: #f8d7da;">
+                    <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Plik</th>
+                    <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Powód</th>
+                </tr>
+                {error_rows}
+            </table>
+            """
         
         body_html = f"""
         <html>
@@ -124,7 +147,7 @@ class EmailNotificationAdapter(NotificationProvider):
             <p><a href="https://docs.google.com/spreadsheets/d/{settings.google_sheets_id}" style="color: #1a73e8; text-decoration: none;">➜ Otwórz arkusz Google Sheets</a></p>
             
             {f'<p style="color: #856404;"><em>Uwaga: {retried} faktur oczekuje na ponowne przetworzenie z powodu limitów API. Zostaną przetworzone przy następnym uruchomieniu.</em></p>' if retried > 0 else ''}
-            {f'<p style="color: #721c24;"><em>Uwaga: {failed} faktur nie zostało przetworzonych. Sprawdź logi.</em></p>' if failed > 0 else ''}
+            {error_details_html}
         </body>
         </html>
         """
