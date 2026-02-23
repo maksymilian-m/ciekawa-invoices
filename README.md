@@ -129,7 +129,7 @@ NOTIFICATION_EMAIL=manager@example.com,accountant@example.com
 ### Run Complete Workflow
 
 ```bash
-uv run src/main.py
+uv run ciekawa-invoices
 ```
 
 This executes the full pipeline:
